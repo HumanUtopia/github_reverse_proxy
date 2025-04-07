@@ -43,4 +43,6 @@ jobs:
       uses: docker/build-push-action@v2
       with:
         push: true
-        tags: ghcr.io/${{ github.repository }}/github-reverse-proxy:latest
+        tags: ghcr.io/${{ github.repository_owner }}/github_reverse_proxy:latest
+        labels: |
+          org.opencontainers.image.source=https://github.com/${{ github.repository }}
