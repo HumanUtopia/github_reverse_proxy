@@ -48,6 +48,6 @@ jobs:
       uses: docker/build-push-action@v2
       with:
         push: true
-        tags: ghcr.io/${{ IMAGE_REPOSITORY }}:latest
+        tags: ghcr.io/$IMAGE_REPOSITORY:latest
         labels: |
-          org.opencontainers.image.source=https://github.com/${{ IMAGE_REPOSITORY }}
+          org.opencontainers.image.source=https://github.com/$IMAGE_REPOSITORY
