@@ -4,7 +4,7 @@ import gzip
 from flask import Flask, request, Response, render_template_string
 import os
 import sys
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 # 配置详细的日志记录
 logging.basicConfig(
@@ -86,6 +86,17 @@ def proxy(path):
                 app.logger.error(f"解压缩错误: {str(e)}")
                 # 如果解压失败，继续使用原始内容
 
+        # 处理返回的HTML、JS、CSS中的URL
+        if 'text/html' in response.headers.get('Content-Type', '') \
+                or 'application/javascript' in response.headers.get('Content-Type', '') \
+                or 'text/css' in response.headers.get('Content-Type', ''):
+            content = content.decode('utf-8')
+            content = content.replace('github.githubassets.com', request.host + '/assets/githubassets')
+            content = content.replace('avatars.githubusercontent.com', request.host + '/assets/avatars')
+            content = content.replace('collector.github.com', request.host + '/assets/collector')
+            content = content.replace('api.github.com', request.host + '/assets/api')
+            content = content.encode('utf-8')
+
         # 创建响应
         flask_response = Response(content, response.status_code, response_headers)
 
@@ -113,7 +124,35 @@ def proxy(path):
 
 @app.route('/', methods=['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS', 'PATCH'])
 def root():
-    return proxy("")
+    return render_template_string(
+        """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>GitHub Reverse Proxy</title>
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; padding: 20px; }
+                .container { max-width: 800px; margin: 0 auto; background-color: #f8f9fa; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+                h1 { color: #343a40; }
+                pre { background-color: #f1f1f1; padding: 10px; border-radius: 5px; overflow-x: auto; }
+                input[type=text] { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
+                button { padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+                button:hover { background-color: #0056b3; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>GitHub Reverse Proxy</h1>
+                <p>欢迎使用 GitHub 反向代理服务。</p>
+                <form action="/proxy" method="get">
+                    <input type="text" name="url" placeholder="输入您要访问的 GitHub URL" required>
+                    <button type="submit">代理请求</button>
+                </form>
+            </div>
+        </body>
+        </html>
+        """
+    )
 
 
 # 添加一个健康检查端点
@@ -155,4 +194,4 @@ def proxy_assets(asset_path):
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001, debug=True, threaded=True)
+    app.run(host='0.0.0.0', port=5000, debug=True, threaded=True)
